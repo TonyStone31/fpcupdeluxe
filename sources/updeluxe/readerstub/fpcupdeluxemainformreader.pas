@@ -4634,12 +4634,12 @@ begin
       aMessageStrings.Free;
     end;
   end;
-  {$ifdef READER}
-  CommandOutputScreen.CaretPos.SetLocation(0,CommandOutputScreen.Lines.Count);
-  {$else}
-  CommandOutputScreen.CaretX:=0;
-  CommandOutputScreen.CaretY:=CommandOutputScreen.Lines.Count;
-  {$endif}
+  //{$ifdef READER}
+  //CommandOutputScreen.CaretPos.SetLocation(0,CommandOutputScreen.Lines.Count);
+  //{$else}
+  //CommandOutputScreen.CaretX:=0;
+  //CommandOutputScreen.CaretY:=CommandOutputScreen.Lines.Count;
+  //{$endif}
 
   {$ifdef usealternateui}
   alternateui_AddMessage(amessage,updatestatus);

@@ -173,6 +173,7 @@ type
     procedure btnBuildNativeCompilerClick(Sender: TObject);
     procedure ButtonSubarchSelectClick({%H-}Sender: TObject);
     procedure chkGitlabChange(Sender: TObject);
+    procedure CommandOutputScreenSynBookMarkOptChange(Sender: TObject);
     procedure IniPropStorageAppRestoringProperties({%H-}Sender: TObject);
     procedure IniPropStorageAppSavingProperties({%H-}Sender: TObject);
     procedure ListBoxTargetDrawItem(Control: TWinControl; Index: Integer;
@@ -4637,35 +4638,56 @@ begin
 
 end;
 
+
 procedure TForm1.AddMessage(const aMessage:string; const UpdateStatus:boolean=false);
 var
   aMessageStrings:TStrings;
+  maxVisibleLine, lastLine, linesVisible, i: Integer;
+  isBottomLineVisible: Boolean;
 begin
   if Length(aMessage)=0 then
-    CommandOutputScreen.Lines.Append('')
+    CommandOutputScreen.Lines.Add('')
   else
   begin
     aMessageStrings:=TStringList.Create;
     try
       aMessageStrings.Text:=aMessage;
-      CommandOutputScreen.Lines.AddStrings(aMessageStrings);
+
+      // Add lines individually
+      for i := 0 to aMessageStrings.Count - 1 do
+      begin
+        CommandOutputScreen.Lines.Add(aMessageStrings[i]);
+      end;
+
       if UpdateStatus then StatusMessage.Text:=aMessageStrings[0];
     finally
       aMessageStrings.Free;
     end;
   end;
-  {$ifdef READER}
-  CommandOutputScreen.CaretPos.SetLocation(0,CommandOutputScreen.Lines.Count);
-  {$else}
-  CommandOutputScreen.CaretX:=0;
-  CommandOutputScreen.CaretY:=CommandOutputScreen.Lines.Count;
-  {$endif}
+
+  // Check if bottom line is in view
+  lastLine := CommandOutputScreen.Lines.Count - 1;
+  linesVisible := CommandOutputScreen.LinesInWindow;
+  maxVisibleLine := CommandOutputScreen.TopLine + linesVisible - 1;
+  isBottomLineVisible := lastLine <= maxVisibleLine;
+
+  if isBottomLineVisible then
+  begin
+    {$ifdef READER}
+    CommandOutputScreen.CaretPos.SetLocation(0,CommandOutputScreen.Lines.Count);
+    {$else}
+    CommandOutputScreen.CaretX:=0;
+    CommandOutputScreen.CaretY:=CommandOutputScreen.Lines.Count;
+    {$endif}
+  end;
 
   {$ifdef usealternateui}
   alternateui_AddMessage(amessage,updatestatus);
   {$endif}
   Application.ProcessMessages;
 end;
+
+
 
 procedure TForm1.TargetSelectionChange(Sender: TObject; User: boolean);
 begin
@@ -4837,11 +4859,18 @@ begin
   ScrollToSelected;
 end;
 
+procedure TForm1.CommandOutputScreenSynBookMarkOptChange(Sender: TObject);
+begin
+
+end;
+
 procedure TForm1.HandleInfo(var Msg: TLMessage);
 var
-  MsgStr: PChar;
   //MsgPStr: PString;
+  MsgStr: PChar;
   MsgPasStr: string;
+  maxVisibleLine, lastLine, linesVisible: Integer;
+  isBottomLineVisible: Boolean;
 begin
   MsgStr := {%H-}PChar(Msg.lParam);
   MsgPasStr := StrPas(MsgStr);
@@ -4863,8 +4892,20 @@ begin
     {$else}
     CommandOutputScreen.Lines.Append(MsgPasStr);
     {$endif}
-    CommandOutputScreen.CaretX:=0;
-    CommandOutputScreen.CaretY:=CommandOutputScreen.Lines.Count;
+    lastLine := CommandOutputScreen.Lines.Count - 1;
+    linesVisible := CommandOutputScreen.LinesInWindow;
+    maxVisibleLine := CommandOutputScreen.TopLine + linesVisible - 1;
+    isBottomLineVisible := lastLine <= maxVisibleLine;
+
+    if isBottomLineVisible then
+    begin
+      {$ifdef READER}
+      CommandOutputScreen.CaretPos.SetLocation(0,CommandOutputScreen.Lines.Count);
+      {$else}
+      CommandOutputScreen.CaretX:=0;
+      CommandOutputScreen.CaretY:=CommandOutputScreen.Lines.Count;
+      {$endif}
+    end;
     {$endif}
 
     ProcessInfo(CommandOutputScreen);
